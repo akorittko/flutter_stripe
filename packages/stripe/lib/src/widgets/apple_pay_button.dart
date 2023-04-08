@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_stripe/src/model/platform_pay_button.dart';
 import 'package:stripe_platform_interface/stripe_platform_interface.dart';
 
 import '../model/apple_pay_button.dart';
@@ -28,6 +27,7 @@ class ApplePayButton extends StatelessWidget {
     this.onShippingContactSelected,
     this.onDidSetCoupon,
     this.onShippingMethodSelected,
+    this.onOrderTracking,
   })  : assert(constraints == null || constraints.debugAssertIsValid()),
         constraints = (width != null || height != null)
             ? constraints?.tighten(width: width, height: height) ??
@@ -69,6 +69,12 @@ class ApplePayButton extends StatelessWidget {
   /// Additional constraints for the Apple pay button widget.
   final BoxConstraints? constraints;
 
+  /// Callback function for setting the order details (retrieved from your server) to give users the
+  /// ability to track and manage their purchases in Wallet. Stripe calls your implementation after the
+  /// payment is complete, but before iOS dismisses the Apple Pay sheet. You must call the `completion`
+  /// function, or else the Apple Pay sheet will hang.
+  final SetOrderTracking? onOrderTracking;
+
   @override
   Widget build(BuildContext context) => ConstrainedBox(
         constraints: constraints ??
@@ -88,6 +94,7 @@ class ApplePayButton extends StatelessWidget {
           onDidSetShippingContact: onShippingContactSelected,
           onDidSetCoupon: onDidSetCoupon,
           onShippingMethodSelected: onShippingMethodSelected,
+          onOrderTracking: onOrderTracking,
         );
       default:
         throw UnsupportedError(
@@ -106,6 +113,7 @@ class _UiKitApplePayButton extends StatefulWidget {
     this.onDidSetShippingContact,
     this.onDidSetCoupon,
     this.onShippingMethodSelected,
+    this.onOrderTracking,
   }) : super(key: key);
 
   final PlatformButtonStyle style;
@@ -115,6 +123,7 @@ class _UiKitApplePayButton extends StatefulWidget {
   final OnDidSetShippingContact? onDidSetShippingContact;
   final OnDidSetShippingMethod? onShippingMethodSelected;
   final OnDidSetCoupon? onDidSetCoupon;
+  final SetOrderTracking? onOrderTracking;
   @override
   _UiKitApplePayButtonState createState() => _UiKitApplePayButtonState();
 }
@@ -130,7 +139,7 @@ class _UiKitApplePayButtonState extends State<_UiKitApplePayButton> {
       creationParams: {
         'type': widget.type.id,
         'style': widget.style.id,
-        'cornerRadius': widget.cornerRadius
+        'borderRadius': widget.cornerRadius
       },
       onPlatformViewCreated: (viewId) {
         methodChannel = MethodChannel('flutter.stripe/apple_pay/$viewId');
@@ -150,6 +159,14 @@ class _UiKitApplePayButtonState extends State<_UiKitApplePayButton> {
           }
           if (call.method == 'onShippingContactSelected') {
             widget.onDidSetCoupon?.call(call.arguments['couponCode']);
+          }
+          if (call.method == 'onOrderTracking') {
+            widget.onOrderTracking?.call(
+              call.arguments['orderIdentifier'],
+              call.arguments['orderTypeIdentifier'],
+              call.arguments['authenticationToken'],
+              call.arguments['webServiceUrl'],
+            );
           }
           return;
         });

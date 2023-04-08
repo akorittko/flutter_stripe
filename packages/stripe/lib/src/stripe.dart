@@ -469,9 +469,11 @@ class Stripe {
   /// See [PresentPaymentSheetPameters] for more details
   ///
   /// throws [StripeException] in case of a failure
-  Future<void> presentPaymentSheet() async {
+  Future<void> presentPaymentSheet({
+    PaymentSheetPresentOptions? options,
+  }) async {
     await _awaitForSettings();
-    return await _platform.presentPaymentSheet();
+    return await _platform.presentPaymentSheet(options: options);
   }
 
   /// Call this method when the user logs out from your app.

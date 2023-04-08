@@ -8,18 +8,18 @@ import 'package:stripe_example/screens/payment_sheet/payment_sheet_screen_custom
 import 'package:stripe_example/widgets/example_scaffold.dart';
 import 'package:stripe_example/widgets/loading_button.dart';
 
-class PaymentSheetScreen extends StatefulWidget {
+class ApplePayPaymentSheetScreen extends StatefulWidget {
   @override
   _PaymentSheetScreenState createState() => _PaymentSheetScreenState();
 }
 
-class _PaymentSheetScreenState extends State<PaymentSheetScreen> {
+class _PaymentSheetScreenState extends State<ApplePayPaymentSheetScreen> {
   int step = 0;
 
   @override
   Widget build(BuildContext context) {
     return ExampleScaffold(
-      title: 'Payment Sheet',
+      title: 'Payment Sheet apple pay subscription',
       tags: ['Single Step'],
       children: [
         Stepper(
@@ -97,6 +97,23 @@ class _PaymentSheetScreenState extends State<PaymentSheetScreen> {
           primaryButtonLabel: 'Pay now',
           applePay: PaymentSheetApplePay(
             merchantCountryCode: 'DE',
+            cartItems: [
+              ApplePayCartSummaryItem.recurring(
+                label: 'Test subscription',
+                amount: '10.00',
+                intervalUnit: ApplePayIntervalUnit.month,
+                intervalCount: 1,
+              ),
+            ],
+            request: PaymentRequestType.recurring(
+              description: 'subscription',
+              managementUrl: 'https://flutter.dev',
+              billing: ImmediateCartSummaryItem(
+                label: 'Subscription',
+                amount: '10.0',
+                isPending: false,
+              ),
+            ),
           ),
           googlePay: PaymentSheetGooglePay(
             merchantCountryCode: 'DE',
@@ -141,9 +158,7 @@ class _PaymentSheetScreenState extends State<PaymentSheetScreen> {
   Future<void> confirmPayment() async {
     try {
       // 3. display the payment sheet.
-      await Stripe.instance.presentPaymentSheet(
-        options: PaymentSheetPresentOptions(timeout: 10000),
-      );
+      await Stripe.instance.presentPaymentSheet();
 
       setState(() {
         step = 0;
